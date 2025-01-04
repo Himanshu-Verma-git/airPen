@@ -7,30 +7,26 @@ import bleak
 import asyncio
 import pyautogui
 
+pyautogui.PAUSE = 0.0
+
 def getData(byte_array, byte_order='little'):
-    # data = int.from_bytes(data, byteorder='little', signed=True)
-    # data = byte_array.decode("utf-8")
-    # data = data.split('_')
-    # float1 = float(data[0])
-    # float2 = float(data[1])
-    # return float1, float2
     return struct.unpack('f', byte_array)[0]
 
 async def cursor_x(CHARACTER, data: bytearray)->None:
-    pyautogui.mouseDown(button="left")
+    # pyautogui.mouseDown(button="left")
     accel = getData(byte_array=data)
-    print(accel)
+    print("X: ",accel)
     pixels_x = calculation.compute_displacement(accel)
-    pyautogui.move(pixels_x, pixels_x)
-    pyautogui.mouseUp(button="left")
+    pyautogui.move(pixels_x, 0)
+    # pyautogui.mouseUp(button="left")
 
 async def cursor_y(CHARACTER, data: bytearray)->None:
-    pyautogui.mouseDown(button="left")
+    # pyautogui.mouseDown(button="left")
     accel = getData(byte_array=data)
-    print(accel)
+    print("Y: ",accel)
     pixels_y = calculation.compute_displacement(accel)
     pyautogui.move(0, pixels_y)
-    pyautogui.mouseUp(button="left")
+    # pyautogui.mouseUp(button="left")
 
 async def main():
     CHAR_X = "00002b51-0000-1000-8000-00805f9b34fb"
