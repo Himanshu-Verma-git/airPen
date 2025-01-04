@@ -9,28 +9,28 @@ import pyautogui
 
 def getData(byte_array, byte_order='little'):
     # data = int.from_bytes(data, byteorder='little', signed=True)
-    data = byte_array.decode("utf-8")
-    data = data.split('_')
-    float1 = float(data[0])
-    float2 = float(data[1])
-    return float1, float2
+    # data = byte_array.decode("utf-8")
+    # data = data.split('_')
+    # float1 = float(data[0])
+    # float2 = float(data[1])
+    # return float1, float2
+    return struct.unpack('f', byte_array)[0]
 
 async def cursor_x(CHARACTER, data: bytearray)->None:
     pyautogui.mouseDown(button="left")
     accel = getData(byte_array=data)
     print(accel)
-    pixels_x = calculation.compute_displacement(accel[0])
-    pixels_y = calculation.compute_displacement(accel[1])
-    pyautogui.move(pixels_x, pixels_y)
+    pixels_x = calculation.compute_displacement(accel)
+    pyautogui.move(pixels_x, pixels_x)
     pyautogui.mouseUp(button="left")
 
 async def cursor_y(CHARACTER, data: bytearray)->None:
-    # pyautogui.mouseDown(button="left")
+    pyautogui.mouseDown(button="left")
     accel = getData(byte_array=data)
     print(accel)
-    # pixels = calculation.compute_displacement(accel)
-    # pyautogui.move(0, pixels)
-    # pyautogui.mouseUp(button="left")
+    pixels_y = calculation.compute_displacement(accel)
+    pyautogui.move(0, pixels_y)
+    pyautogui.mouseUp(button="left")
 
 async def main():
     CHAR_X = "00002b51-0000-1000-8000-00805f9b34fb"
@@ -69,7 +69,7 @@ async def main():
     
     await client.writeToChar(CHAR_FLAG, b'\x01')
     await client.start_notification(CHAR_X, handler=cursor_x)
-    # await client.start_notification(CHAR_Y, handler=cursor_y)
+    await client.start_notification(CHAR_Y, handler=cursor_y)
     print("Conformation Sent.")
     
     while(client.connected): 
@@ -77,7 +77,7 @@ async def main():
         await asyncio.sleep(1)
     
     await client.stop_notification(char_uuid=CHAR_X)
-    # await client.stop_notification(char_uuid=CHAR_Y)
+    await client.stop_notification(char_uuid=CHAR_Y)
     await client.disconnect_device()
     print("Disconnected")
 
