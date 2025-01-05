@@ -2,18 +2,23 @@
 // #include <math.h>
 #include "Arduino_BMI270_BMM150.h"
 
-// float gyro[3];
-// float acc[3];
-float x;
-float y;
-float z;
-String vals;
-// float mag[3];
+float gyr[3];
+float acc[3];
+float mag[3];
 
 // Create a BLE Service 
+BLEService serviceGyr("AA");
+  BLECharacteristic charGyrx("11", BLERead | BLENotify, 10); 
+  BLECharacteristic charGyry("12", BLERead | BLENotify, 10); 
+  BLECharacteristic charGyrz("13", BLERead | BLENotify, 10); 
 BLEService serviceAcc("180B");
-  BLECharacteristic charAccx("2B51", BLERead | BLENotify, 10); 
-  BLECharacteristic charAccy("2B52", BLERead | BLENotify, 10); 
+  BLECharacteristic charAccx("21", BLERead | BLENotify, 10); 
+  BLECharacteristic charAccy("22", BLERead | BLENotify, 10); 
+  BLECharacteristic charAccz("23", BLERead | BLENotify, 10); 
+BLEService serviceMag("180C");
+  BLECharacteristic charMagx("31", BLERead | BLENotify, 10); 
+  BLECharacteristic charMagy("32", BLERead | BLENotify, 10); 
+  BLECharacteristic charMagz("33", BLERead | BLENotify, 10); 
 
 BLEService serviceFlag("180D");
   BLECharacteristic charFlag("2A57", BLERead | BLEWrite | BLENotify, 20);
@@ -40,15 +45,26 @@ void setup() {
 
   // Set BLE device properties
   BLE.setLocalName("Nano33BLE_SingleValue");
+  BLE.setAdvertisedService(serviceGyr);
   BLE.setAdvertisedService(serviceAcc);
+  BLE.setAdvertisedService(serviceMag);
 
   // Add the characteristic to the service
+  serviceGyr.addCharacteristic(charGyrx);
+  serviceGyr.addCharacteristic(charGyry);
+  serviceGyr.addCharacteristic(charGyrz);
   serviceAcc.addCharacteristic(charAccx);
   serviceAcc.addCharacteristic(charAccy);
+  serviceAcc.addCharacteristic(charAccz);
+  serviceMag.addCharacteristic(charMagx);
+  serviceMag.addCharacteristic(charMagy);
+  serviceMag.addCharacteristic(charMagz);
   serviceFlag.addCharacteristic(charFlag);
   
   // Add the service to the BLE stack
+  BLE.addService(serviceGyr);
   BLE.addService(serviceAcc);
+  BLE.addService(serviceMag);
   BLE.addService(serviceFlag);
 
   // Start advertising
@@ -75,17 +91,23 @@ BLEDevice central = BLE.central();
     while (central.connected()) {
 
       //  Read Values form sensor
-      if ( IMU.accelerationAvailable() ) {
-        IMU.readAcceleration(x, y, z);
+      if ( IMU.accelerationAvailable() 
+      && IMU.gyroscopeAvailable() 
+      && IMU.magneticFieldAvailable() ) {
+        IMU.readGyroscope(gyr[0], gyr[1], gyr[2]);
+        IMU.readAcceleration(acc[0], acc[1], acc[2]);
+        IMU.readMagneticField(mag[0], mag[1], mag[2]);
 
-        // String floatString = String(x, 2) + "_" + String(y, 2);
-        // char str[floatString.length() + 1];
-        // floatString.toCharArray(str, sizeof(str));
-        
-        // writeVal(charAccx,  str);
-        charAccx.writeValue( (byte*)&x, sizeof(float) );
-        charAccy.writeValue( (byte*)&y, sizeof(float) );
-        // writeVal(charAccy,  inty);
+        charGyrx.writeValue( (byte*)&gyr[0], sizeof(float) );
+        charGyry.writeValue( (byte*)&gyr[1], sizeof(float) );
+        charGyrz.writeValue( (byte*)&gyr[2], sizeof(float) );
+        charAccx.writeValue( (byte*)&acc[0], sizeof(float) );
+        charAccy.writeValue( (byte*)&acc[1], sizeof(float) );
+        charAccz.writeValue( (byte*)&acc[2], sizeof(float) );
+        charMagx.writeValue( (byte*)&mag[0], sizeof(float) );
+        charMagy.writeValue( (byte*)&mag[1], sizeof(float) );
+        charMagz.writeValue( (byte*)&mag[2], sizeof(float) );
+        Serial.println("Values Sent");
       }
       //delay(100);
     }

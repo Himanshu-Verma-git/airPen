@@ -1,7 +1,7 @@
 import numpy as np
 import time
 
-def compute_displacement(accel, time_delay=0.1, scale_factor=1000):
+def compute_displacement(accel, time_delay=0.1, scale_factor=100):
     """
     Compute the displacement from acceleration in g's to pixels.
     
