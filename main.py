@@ -10,6 +10,8 @@ import pyautogui
 
 pyautogui.PAUSE = 0.0
 
+gravity:list = [0, 0, 1]
+
 accel_data:list = [0, 0, 0]
 gyro_data:list = [0, 0, 0]
 magnet_data:list = [0, 0, 0]
@@ -54,6 +56,12 @@ async def cursor_y(CHARACTER, data: bytearray)->None:
     pixels_y = calculation.compute_displacement(accel)
     pyautogui.move(0, pixels_y)
     # pyautogui.mouseUp(button="left")
+
+def movement(ax, ay, az):
+    displacement_x = calculation.compute_displacement(ax, scale_factor=1)
+    displacement_y = calculation.compute_displacement(ay, scale_factor=1)
+    displacement_z = calculation.compute_displacement(az, scale_factor=1)
+    # print(displacement_x, "\t", displacement_y, "\t", displacement_z)
 
 async def main():
     CHAR_GX = "00000011-0000-1000-8000-00805f9b34fb"
@@ -113,9 +121,12 @@ async def main():
 
     await client.writeToChar(CHAR_FLAG, b'\x01')
     while(client.connected):
-        pitch, roll, yaw = body.calculate_orientation(accel_data, gyro_data, magnet_data, 0, kalman_filters)
-        # print("PRY")
-        print(pitch, "\t", roll, "\t", yaw, "\t")
+        pitch, roll, yaw = body.calculate_orientation(accel_data, gyro_data, magnet_data, dt, kalman_filters)
+        # print(pitch, "\t", roll, "\t", yaw, "\t")
+        gravity = calculation.getGrav(pitch, roll, yaw)
+        # print("Gravity: ", gravity)
+        # print("Accelld: ", accel_data)
+        movement((accel_data[0] - gravity[0]), (accel_data[1] - gravity[1]), (accel_data[2] - gravity[2]))
         await asyncio.sleep(0.1)
 
     # await client.stop_notification(char_uuid=CHAR_AX)
