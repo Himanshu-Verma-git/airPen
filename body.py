@@ -1,7 +1,7 @@
 import numpy as np
 
 class KalmanFilter:
-    def __init__(self, Q_angle=0.2, Q_bias=0.3, R_measure=0.01):
+    def __init__(self, Q_angle=0.001, Q_bias=0.003, R_measure=0.03):
         """
         Initialize Kalman filter parameters.
         :param Q_angle: Process noise variance for the accelerometer angle.
@@ -53,29 +53,31 @@ class KalmanFilter:
 
         return self.angle
 
-def calculate_orientation(accel, gyro, magnet, dt, kalman_filters):
+def calculate_orientation(accel, gyro, dt, kalman_filters):
     """
     Calculate pitch, roll, and yaw using sensor data and Kalman filters.
     :param accel: Accelerometer readings (x, y, z).
     :param gyro: Gyroscope readings (x, y, z).
-    :param magnet: Magnetometer readings (x, y, z).
     :param dt: Time step.
     :param kalman_filters: List of KalmanFilter instances for roll, pitch, and yaw.
-    :return: Tuple of (pitch, roll, yaw).
+    :param yaw_accumulated: The accumulated yaw value to maintain continuity.
+    :return: Tuple of (pitch, roll, yaw, yaw_accumulated).
     """
     # Calculate roll and pitch from accelerometer
     accel_x, accel_y, accel_z = accel
     roll_accel = np.arctan2(accel_y, accel_z) * 180 / np.pi
     pitch_accel = np.arctan2(-accel_x, np.sqrt(accel_y**2 + accel_z**2)) * 180 / np.pi
 
-    # Calculate yaw from magnetometer
-    magnet_x, magnet_y, magnet_z = magnet
-    yaw_mag = np.arctan2(magnet_y, magnet_x) * 180 / np.pi
-
     # Update Kalman filters
     roll = kalman_filters[0].update(roll_accel, gyro[0], dt)
     pitch = kalman_filters[1].update(pitch_accel, gyro[1], dt)
-    yaw = kalman_filters[2].update(yaw_mag, gyro[2], dt)
+
+    # Calculate yaw by integrating gyroscope data
+    yaw_rate = gyro[2]
+    yaw_increment = yaw_rate * dt
+    yaw_new = kalman_filters[2].angle + yaw_increment
+
+    yaw = kalman_filters[2].update(yaw_new, gyro[2], dt)  # No external reference for yaw, only gyroscope
 
     return pitch, roll, yaw
 
@@ -84,7 +86,6 @@ if __name__ == "__main__":
     # Simulated IMU data (replace with actual sensor readings)
     accel_data = [0.0, 0.0, 9.8]  # Accelerometer (x, y, z)
     gyro_data = [0.1, 0.2, 0.3]   # Gyroscope (x, y, z)
-    magnet_data = [0.4, 0.5, 0.6] # Magnetometer (x, y, z)
     dt = 0.01                     # Time step (10 ms)
 
     # Initialize Kalman filters for roll, pitch, and yaw
@@ -94,6 +95,8 @@ if __name__ == "__main__":
 
     kalman_filters = [kalman_roll, kalman_pitch, kalman_yaw]
 
-    pitch, roll, yaw = calculate_orientation(accel_data, gyro_data, magnet_data, dt, kalman_filters)
+    yaw_accumulated = 0.0
 
-    print(f"Pitch: {pitch:.2f}, Roll: {roll:.2f}, Yaw: {yaw:.2f}")
+    pitch, roll, yaw = calculate_orientation(accel_data, gyro_data, dt, kalman_filters)
+
+    print(f"Pitch: {pitch:.2f}, Roll: {roll:.2f}, Yaw: {yaw:.2f}, Accumulated Yaw: {yaw_accumulated:.2f}")

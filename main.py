@@ -9,8 +9,11 @@ import asyncio
 import pyautogui
 
 pyautogui.PAUSE = 0.0
+pyautogui.FAILSAFE = False
 
-gravity:list = [0, 0, 1]
+gravity:list = [0, 0, 0]
+location:list = [0, 0, 0]
+dy_loc:list = [0, 0, 0]
 
 accel_data:list = [0, 0, 0]
 gyro_data:list = [0, 0, 0]
@@ -20,20 +23,20 @@ kalman_roll = body.KalmanFilter()
 kalman_pitch = body.KalmanFilter()
 kalman_yaw = body.KalmanFilter()
 dt = 0.01
-
+float()
 kalman_filters = [kalman_roll, kalman_pitch, kalman_yaw]
 
 async def setData(Character, data: bytearray):
     data = getData(data)
-    if(Character.uuid == "00000011-0000-1000-8000-00805f9b34fb"): gyro_data[0] = data
-    if(Character.uuid == "00000012-0000-1000-8000-00805f9b34fb"): gyro_data[1] = data
-    if(Character.uuid == "00000013-0000-1000-8000-00805f9b34fb"): gyro_data[2] = data
-    if(Character.uuid == "00000021-0000-1000-8000-00805f9b34fb"): accel_data[0] = data
-    if(Character.uuid == "00000022-0000-1000-8000-00805f9b34fb"): accel_data[1] = data
-    if(Character.uuid == "00000023-0000-1000-8000-00805f9b34fb"): accel_data[2] = data
-    if(Character.uuid == "00000031-0000-1000-8000-00805f9b34fb"): magnet_data[0] = data
-    if(Character.uuid == "00000032-0000-1000-8000-00805f9b34fb"): magnet_data[1] = data
-    if(Character.uuid == "00000033-0000-1000-8000-00805f9b34fb"): magnet_data[2] = data
+    if(Character.uuid == "00000011-0000-1000-8000-00805f9b34fb"): gyro_data[0] = round(data, 1)
+    if(Character.uuid == "00000012-0000-1000-8000-00805f9b34fb"): gyro_data[1] = round(data, 1)
+    if(Character.uuid == "00000013-0000-1000-8000-00805f9b34fb"): gyro_data[2] = round(data, 1)
+    if(Character.uuid == "00000021-0000-1000-8000-00805f9b34fb"): accel_data[0] = round(data, 1)
+    if(Character.uuid == "00000022-0000-1000-8000-00805f9b34fb"): accel_data[1] = round(data, 1)
+    if(Character.uuid == "00000023-0000-1000-8000-00805f9b34fb"): accel_data[2] = round(data, 1)
+    if(Character.uuid == "00000031-0000-1000-8000-00805f9b34fb"): magnet_data[0] = round(data, 1)
+    if(Character.uuid == "00000032-0000-1000-8000-00805f9b34fb"): magnet_data[1] = round(data, 1)
+    if(Character.uuid == "00000033-0000-1000-8000-00805f9b34fb"): magnet_data[2] = round(data, 1)
 # async def printdata(Character, data: bytearray):
 #     print(Character.uuid)
 #     print(type(Character))
@@ -41,12 +44,9 @@ async def setData(Character, data: bytearray):
 def getData(byte_array, byte_order='little'):
     return struct.unpack('f', byte_array)[0]
 
-async def cursor_x(CHARACTER, data: bytearray)->None:
+async def cursorMove(x, y)->None:
     # pyautogui.mouseDown(button="left")
-    accel = getData(byte_array=data)
-    print("X: ",accel)
-    pixels_x = calculation.compute_displacement(accel)
-    pyautogui.move(pixels_x, 0)
+    pyautogui.move(x, y)
     # pyautogui.mouseUp(button="left")
 
 async def cursor_y(CHARACTER, data: bytearray)->None:
@@ -57,10 +57,18 @@ async def cursor_y(CHARACTER, data: bytearray)->None:
     pyautogui.move(0, pixels_y)
     # pyautogui.mouseUp(button="left")
 
-def movement(ax, ay, az):
+def setLocationData(ax, ay, az):
     displacement_x = calculation.compute_displacement(ax, scale_factor=1)
     displacement_y = calculation.compute_displacement(ay, scale_factor=1)
     displacement_z = calculation.compute_displacement(az, scale_factor=1)
+    
+    dy_loc[0] = displacement_x
+    dy_loc[1] = displacement_y
+    dy_loc[2] = displacement_z
+    
+    location[0] = location[0] + displacement_x
+    location[1] = location[1] + displacement_y
+    location[2] = location[2] + displacement_z
     # print(displacement_x, "\t", displacement_y, "\t", displacement_z)
 
 async def main():
@@ -121,16 +129,21 @@ async def main():
 
     await client.writeToChar(CHAR_FLAG, b'\x01')
     while(client.connected):
-        pitch, roll, yaw = body.calculate_orientation(accel_data, gyro_data, magnet_data, dt, kalman_filters)
-        # print(pitch, "\t", roll, "\t", yaw, "\t")
-        gravity = calculation.getGrav(pitch, roll, yaw)
+        pitch, roll, yaw = body.calculate_orientation(accel_data, gyro_data, dt, kalman_filters)
+        gravity = calculation.getGrav(90-pitch, 90-roll, yaw)
+        setLocationData((accel_data[0] - gravity[0]), (accel_data[1] - gravity[1]), (accel_data[2] - gravity[2]))
+        #scale is set here internally
+        await cursorMove(int(dy_loc[0] * 150), int(dy_loc[1] * 150))
+        await asyncio.sleep(0.01)
+        print(pitch, "\t", roll, "\t", yaw)
+        # print(pitch, "\t", roll, "\t", yaw, "\t", gravity, "\t", accel_data)
+        # print(location, "\t", dy_loc)
+        print("===================================================================================================================================")
         # print("Gravity: ", gravity)
         # print("Accelld: ", accel_data)
-        movement((accel_data[0] - gravity[0]), (accel_data[1] - gravity[1]), (accel_data[2] - gravity[2]))
-        await asyncio.sleep(0.1)
+        # print("Location:\t\t",location)
+        # print("PIXELS:\t\t",dy_loc)
 
-    # await client.stop_notification(char_uuid=CHAR_AX)
-    # await client.stop_notification(char_uuid=CHAR_AY)
     await client.stop_notification(CHAR_GX)
     await client.stop_notification(CHAR_GY)
     await client.stop_notification(CHAR_GY)

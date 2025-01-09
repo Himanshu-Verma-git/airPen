@@ -33,7 +33,7 @@ def compute_displacement(accel, time_delay=0.1, scale_factor=100):
     return displacement_pixels
 
 def getGrav(pitch, roll, yaw)->list:
-    return (math.cos(pitch), math.cos(roll), math.cos(yaw))
+    return (math.cos(math.radians(pitch)), math.cos(math.radians(roll)), math.cos(math.radians(yaw)))
 def getAngles()->list:pass
 
 # def compute_displacement(accel_x_g, accel_y_g, time_delay, scale_factor=100):
