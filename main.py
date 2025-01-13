@@ -136,7 +136,7 @@ async def main():
         await cursorMove(int(dy_loc[0] * 150), int(dy_loc[1] * 150))
         await asyncio.sleep(0.01)
         print(pitch, "\t", roll, "\t", yaw)
-        # print(pitch, "\t", roll, "\t", yaw, "\t", gravity, "\t", accel_data)
+        # print(pitch, "\t", roll, "\t", yaw, "\t", gravity)
         # print(location, "\t", dy_loc)
         print("===================================================================================================================================")
         # print("Gravity: ", gravity)
