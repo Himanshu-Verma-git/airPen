@@ -54,15 +54,6 @@ class KalmanFilter:
         return self.angle
 
 def calculate_orientation(accel, gyro, dt, kalman_filters):
-    """
-    Calculate pitch, roll, and yaw using sensor data and Kalman filters.
-    :param accel: Accelerometer readings (x, y, z).
-    :param gyro: Gyroscope readings (x, y, z).
-    :param dt: Time step.
-    :param kalman_filters: List of KalmanFilter instances for roll, pitch, and yaw.
-    :param yaw_accumulated: The accumulated yaw value to maintain continuity.
-    :return: Tuple of (pitch, roll, yaw, yaw_accumulated).
-    """
     # Calculate roll and pitch from accelerometer
     accel_x, accel_y, accel_z = accel
     roll_accel = np.arctan2(accel_y, accel_z) * 180 / np.pi
